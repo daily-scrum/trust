@@ -95,6 +95,13 @@ module Trust
       def member_action?(action)
         member_actions.include? action.to_sym
       end
+      
+      def action_type(action)
+        return :collection if collection_actions.include?( action.to_sym)
+        return :member if member_actions.include?( action.to_sym)
+        return :new if new_actions.include?( action.to_sym)
+        nil
+      end
       # Specify associated resources (nested resources)
       #
       # === Example

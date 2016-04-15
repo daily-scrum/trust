@@ -233,7 +233,17 @@ module Trust
       #   +can? :edit, @customer+               # does the current user have permission to edit the given customer? 
       #                                         # Parent is also passed on here.
       #   +can? :edit, @account, @client+       # is current user allowed to edit the account associated with the client?
-      def can?(action_name, subject = resource.instance || resource.relation.new, parent = resource.parent)
+      #def can?(action_name, subject = resource.instance || resource.relation.new, parent = resource.parent)
+      def can?(action_name, subject = nil, parent = nil)
+        parent ||= resource.parent
+        subject ||= case properties.action_type(action_name)
+        when :collection
+          resource.klass
+        when :member
+          resource.instance
+        when :new
+          resource.relation.new
+        end
         Trust::Authorization.authorized?(action_name, subject, parent)
       end
     end

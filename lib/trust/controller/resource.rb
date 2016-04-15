@@ -55,7 +55,6 @@ module Trust
           @parent_info = extract_parent_info(properties.associations, params, request)
           self.parent = parent_info.object if parent_info
         end
-        @relation = @info.relation(@parent_info)
       end
 
       # Returns the instance variable in the controller
@@ -83,6 +82,10 @@ module Trust
       #     resource.instance_params  # same as params[:account]
       def instance_params
         info.params
+      end
+      
+      def relation
+        @relation ||= @info.relation(@parent_info)
       end
       
       # Returns strong parameters for the instance (Rails 4)
