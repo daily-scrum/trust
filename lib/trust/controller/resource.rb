@@ -214,8 +214,12 @@ module Trust
       #
       #     # in AccountsController
       #     resource.instance_name  # => :account
+      #
+      #     # if nested below same class, i.e. parent and child is of same class
+      #     resource.instance_name  # => :account_account
+      #     
       def instance_name
-        info.name
+        @instance_name ||= truly_nested? ? "#{info.name}_#{info.name}".to_sym : info.name
       end
       
       # Assigns the handler for safe parameters
@@ -259,7 +263,12 @@ module Trust
       
       def extract_parent_info(associations, params, request) #nodoc
         ParentInfo.new(associations, params, request)
-      end      
+      end
+      
+      # => true if parent class is the same as instance
+      def truly_nested?
+        parent_info && info.name == parent_info.name
+      end
     end
 
     # = ResorceInfo 

@@ -224,7 +224,6 @@ class Trust::Controller::ResourceTest < ActiveSupport::TestCase
       @properties.belongs_to :parent
       @resource_info = stub('ResourceInfo')
       @parent_info = stub(:object => 6, :name => :parent)
-      @resource_info.expects(:relation).with(@parent_info).returns(Child)
       @resource_info.stubs(:name).returns(:child)
     end
     context 'Plain' do
@@ -267,6 +266,8 @@ class Trust::Controller::ResourceTest < ActiveSupport::TestCase
         assert_equal 3, @resource.collection(2)
       end
       should 'load as expected' do
+        @resource_info.expects(:relation).with(@parent_info).returns(Child)
+        @resource.expects(:new_action?).returns(true).at_least_once
         @resource_info.stubs(:params).returns({})
         @controller.expects(:respond_to?).with(:build,true).returns(false)
         @resource.load
@@ -283,8 +284,10 @@ class Trust::Controller::ResourceTest < ActiveSupport::TestCase
       end
       should 'load member as expected' do
         @resource = Trust::Controller::Resource.new(@controller, @properties, 'member',{ :id => 1 }, @request)
+        @resource_info.expects(:relation).with(@parent_info).returns(Child)
         @properties.actions :member => [:member]
         @resource_info.stubs(:params).returns({})
+        @resource.expects(:new_action?).returns(false).at_least_once
         @controller.expects(:respond_to?).with(:build,true).returns(false)
         Child.expects(:find).with(1).returns(Child.new)
         @resource.load
@@ -315,6 +318,7 @@ class Trust::Controller::ResourceTest < ActiveSupport::TestCase
         @resource = Trust::Controller::Resource.new(@controller, @properties, 'member',{ :child_id => 1 }, @request)
         @properties.actions :member => [:member]
         @resource_info.stubs(:params).returns({})
+        @resource_info.expects(:relation).with(@parent_info).returns(Child)
         @controller.expects(:respond_to?).with(:build,true).returns(false)
         Child.expects(:find).with(1).returns(Child.new)
         @resource.load
@@ -325,5 +329,23 @@ class Trust::Controller::ResourceTest < ActiveSupport::TestCase
       end
     end
   end
-  
+  context 'Nested resources of same class' do
+    setup do
+      @controller = stub('Controller', :controller_path => :controller)
+      @properties = Trust::Controller::Properties.new(@controller, nil)
+      @properties.model :child
+      @properties.belongs_to :child
+      @resource_info = stub('ResourceInfo')
+      @resource_info.stubs(:object => 6, :name => :child)
+      Trust::Controller::Resource.any_instance.expects(:extract_resource_info).with('child', { :child_id => 1 }).returns(@resource_info)
+      Trust::Controller::Resource.any_instance.expects(:extract_parent_info).with({:child => nil}, { :child_id => 1 }, @request).returns(@resource_info)
+      @resource = Trust::Controller::Resource.new(@controller, @properties, 'member',{ :child_id => 1 }, @request)
+    end
+    should 'appear as truly nested' do
+      assert @resource.send(:truly_nested?)
+    end
+    should 'support nested instance name' do
+      assert_equal :child_child, @resource.instance_name
+    end
+  end
 end
