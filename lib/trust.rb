@@ -36,6 +36,9 @@ module Trust
   
   config_accessor :log_level
   
+  # Identifies the Rails generation version
+  # Rails.version "4.2.1"
+  # => 4
   def self.rails_generation
     @@__generation ||= Rails.version.split('.')[0].to_i
   end
