@@ -146,9 +146,11 @@ module Trust
         end
       else
         def _filter_setting(method, *args)
+          #puts method.inspect, args.inspect
           options = args.extract_options!
-          skip_before_action method
+          skip_before_action method, raise: false
           unless args.include? :off or options[method] == :off
+            #puts "before_action #{method.inspect}, #{options.inspect}"
             before_action method, options
           end
         end        
@@ -240,7 +242,7 @@ module Trust
         when :collection
           resource.klass
         when :member
-          resource.instance
+          resource.instance || resource.klass # default back to class if no instance
         when :new
           resource.relation.new
         end

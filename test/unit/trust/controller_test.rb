@@ -67,7 +67,7 @@ class Trust::ControllerTest < ActiveSupport::TestCase
     
     context '_filter_setting' do
       should 'setup correct instance method callback' do
-        Controller.expects(:"skip_#{@filter_keyword}").with(:access_control).times(3)
+        Controller.expects(:"skip_#{@filter_keyword}").with(:access_control, raise: false).times(3)
         Controller.expects(@filter_keyword).with(:access_control,{})
         Controller.access_control
         Controller.expects(@filter_keyword).with(:access_control,{:only => :index})
@@ -151,20 +151,29 @@ class Trust::ControllerTest < ActiveSupport::TestCase
         Trust::Authorization.expects(:authorized?).with(:manage,account,nil).returns(true)
         @controller.can? :manage, account
       end
-      should 'should have default parameters' do
-        resource = stub('Resource')
-        relation = stub('Relation')
-        @controller.expects(:resource).returns(resource).at_least_once
-        relation.expects(:new).returns(:some_relation_instance)
-        resource.expects(:relation).returns(relation)
-        resource.expects(:instance).returns(:instance)
-        resource.expects(:parent).returns(:parent)
-        Trust::Authorization.expects(:authorized?).with(:manage,:instance,:parent)
-        @controller.can? :manage
-        resource.expects(:instance).returns(nil)
-        resource.expects(:parent).returns(:parent)
-        Trust::Authorization.expects(:authorized?).with(:manage,:some_relation_instance,:parent)
-        @controller.can? :manage
+      context 'default values' do
+        setup do
+          @resource = stub('Resource')
+          @controller.expects(:resource).returns(@resource).at_least_once
+          @resource.expects(:parent).returns(:parent).at_least_once
+        end
+        should 'support collection actions' do
+          @resource.expects(:klass).returns(:klass)
+          Trust::Authorization.expects(:authorized?).with(:index,:klass,:parent)
+          @controller.can? :index
+        end
+        should 'support member actions' do
+          @resource.expects(:instance).returns(:instance)
+          Trust::Authorization.expects(:authorized?).with(:show,:instance,:parent)
+          @controller.can? :show
+        end
+        should 'support new actions' do
+          relation = stub('Relation')
+          @resource.expects(:relation).returns(relation)
+          relation.expects(:new).returns(:some_relation_instance)
+          Trust::Authorization.expects(:authorized?).with(:create,:some_relation_instance,:parent)
+          @controller.can? :create
+        end
       end
       should 'be exposed as helper' do
         assert @controller.class._helper_methods.include?(:can?)
