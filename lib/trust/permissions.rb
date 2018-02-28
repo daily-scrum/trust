@@ -153,7 +153,7 @@ module Trust
     #
     # The handler contains information used by the resource on retrieing parametes later
     def authorized?
-      trace 'authorized?', 0, "@user: #{@user.inspect}, @action: #{@action.inspect}, @klass: #{@klass.inspect}, @subject: #{@subject.inspect}, @parent: #{@parent.inspect}"
+      trace 'authorized?', 0, action: @action, user: @user, subject: @subject, parent: @parent, class: @klass
       if params_handler = (user && (permission_by_role || permission_by_member_role))
         params_handler = params_handler_default(params_handler)
       end
@@ -248,11 +248,10 @@ module Trust
     
     def permission_by_role
       auth = nil
-      trace 'authorize_by_role?', 0, "#{user.try(:name)}"
+      trace 'permission_by_role', 0, user: user, role_symbols: user.role_symbols
       user.role_symbols.any? do |role| 
-        trace 'authorize_by_role?', 1, "#{role}"
         if p = permissions[role]
-          trace 'authorize_by_role?', 2, "permissions: #{p.inspect}"          
+          trace 'permission_by_role', 1, user: user, role: role, permissions: p
           auth = authorization(p)
         end
       end
@@ -262,11 +261,23 @@ module Trust
     # Checks is a member is authorized
     # You will need to implement members_role in permissions yourself
     def permission_by_member_role
-      m = members_role
-      trace 'authorize_by_member_role?', 0, "#{user.try(:name)}:#{m}"
-      p = member_permissions[m]
-      trace 'authorize_by_role?', 1, "permissions: #{p.inspect}"      
-      p && authorization(p)
+      begin
+        m = members_role
+        p = member_permissions[m]
+        trace 'permission_by_member_role', 0, user: user, member_role: m, permissions: p
+        p && authorization(p)
+      rescue NoMethodError => e
+        if e.message =~ /nil:NilClass/
+          raise NoMethodError, e.message + <<-TEXT
+          
+          Did you forget to declare actions in controller?
+          You can do this by declaring one of the follwoing in your controller:
+            actions add: {member: :#{action}}
+          or
+            actions add: {collection: :#{action}}
+          TEXT
+        end
+      end
     end
     
     def authorization(permissions = {})
@@ -274,7 +285,7 @@ module Trust
       permissions.any? do |act, opt|
         auth = (opt.any? ? eval_expr(opt) : {}) if act == action
       end
-      trace( 'authorization', 2, "got permission!") if auth
+      trace 'authorization', 1, got_permission: auth if auth
       auth
     end
 
@@ -290,9 +301,36 @@ module Trust
       klass.name.to_s.underscore.tr('/','_').to_sym
     end
 
-    def trace(method, indent = 0, msg = nil)
-      return unless Trust.log_level == :trace
-      Rails.logger.debug "#{self.class.name}.#{method}: #{"\t" * indent}#{msg}"
+    def trace(method, indent = 0, args = {})
+      return unless [:trace, :debug].include? Trust.log_level
+      string = "#{self.class.name}.#{method}: #{"\t" * indent}"
+      string += args.map do |k,v|
+        case k
+        when :user
+          @@user_identifier_attribute ||= [:user_name, :login, :name, :id].select { |attr| v.respond_to?(attr) }.first
+          "User: #{v.send(@@user_identifier_attribute)}"
+        when :class
+          "Class: #{v}"
+        when :subject, :parent
+          "#{trace_label(k)}: #{trace_object(v)}"
+        else
+          "#{trace_label(k)}: #{v.inspect}"
+        end
+      end.join(", ")
+      Rails.logger.debug string
+    end
+    
+    def trace_label(attr)
+      label = attr.to_s
+      label = label[0].upcase + label[1..-1]
+    end
+    
+    def trace_object(v)
+      if Trust.log_level == :trace
+        v.inspect
+      else
+        "#{v.class}(#{v.try(:id)})"
+      end
     end
     
     class << self
