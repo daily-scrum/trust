@@ -148,7 +148,7 @@ module Trust
         def _filter_setting(method, *args)
           #puts method.inspect, args.inspect
           options = args.extract_options!
-          skip_before_action method, raise: false
+          skip_before_action method # , raise: false # raise not supported in 4.2.6
           unless args.include? :off or options[method] == :off
             #puts "before_action #{method.inspect}, #{options.inspect}"
             before_action method, options

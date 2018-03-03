@@ -67,7 +67,7 @@ class Trust::ControllerTest < ActiveSupport::TestCase
     
     context '_filter_setting' do
       should 'setup correct instance method callback' do
-        Controller.expects(:"skip_#{@filter_keyword}").with(:access_control, raise: false).times(3)
+        Controller.expects(:"skip_#{@filter_keyword}").with(:access_control).times(3)
         Controller.expects(@filter_keyword).with(:access_control,{})
         Controller.access_control
         Controller.expects(@filter_keyword).with(:access_control,{:only => :index})
@@ -170,8 +170,7 @@ class Trust::ControllerTest < ActiveSupport::TestCase
         should 'support new actions' do
           relation = stub('Relation')
           @resource.expects(:relation).returns(relation)
-          relation.expects(:new).returns(:some_relation_instance)
-          Trust::Authorization.expects(:authorized?).with(:create,:some_relation_instance,:parent)
+          Trust::Authorization.expects(:authorized?).with(:create,relation,:parent)
           @controller.can? :create
         end
       end
