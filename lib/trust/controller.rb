@@ -244,7 +244,7 @@ module Trust
         when :member
           resource.instance || resource.klass # default back to class if no instance
         when :new
-          resource.relation.new
+          resource.relation
         end
         Trust::Authorization.authorized?(action_name, subject, parent)
       end
