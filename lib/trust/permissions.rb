@@ -186,6 +186,7 @@ module Trust
     # Returns subject if subject is an instance, otherwise parent
     # 
     def subject_or_parent
+      # (@subject.nil? || subject.is_a?(Class) || subject.is_a?(Array)) ? parent : subject
       (@subject.nil? || subject.is_a?(Class)) ? parent : subject
     end
     
@@ -276,6 +277,8 @@ module Trust
           or
             actions add: {collection: :#{action}}
           TEXT
+        else
+          raise
         end
       end
     end
