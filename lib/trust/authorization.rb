@@ -68,13 +68,13 @@ module Trust
       
       # Returns the current +user+ being used in the authorization process
       def user
-        Thread.current["current_user"] 
+        Thread.current["trust_current_user"]
       end
       
       # Sets the current +user+ to be used in the authorization process.
       # The +user+ is thread safe.
       def user=(user)
-        Thread.current["current_user"] = user
+        Thread.current["trust_current_user"] = user
       end
     end
     

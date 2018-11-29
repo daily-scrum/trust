@@ -71,10 +71,10 @@ class Trust::AuthorizationTest < ActiveSupport::TestCase
     context 'user' do
       should 'be set in thread' do
         Trust::Authorization.user = 1
-        assert_equal 1, Thread.current["current_user"]
+        assert_equal 1, Thread.current["trust_current_user"]
       end
       should 'be retrieved from thread' do
-        Thread.current["current_user"] = 2
+        Thread.current["trust_current_user"] = 2
         assert_equal 2, Trust::Authorization.user
       end
     end
