@@ -68,7 +68,7 @@ module Trust
       
       # Returns the current +user+ being used in the authorization process
       def user
-        Thread.current["trust_current_user"]
+        Thread.current["trust_current_user"] 
       end
       
       # Sets the current +user+ to be used in the authorization process.
@@ -96,6 +96,9 @@ module Trust
         @actor = options[:by] || user
         if resource_object_or_class.is_a? Class
           @klass = resource_object_or_class
+          @object = nil
+        elsif resource_object_or_class.is_a? ActiveRecord::Relation
+          @klass = resource_object_or_class.klass
           @object = nil
         else
           @klass = resource_object_or_class.class

@@ -144,11 +144,19 @@ module Trust
             before_filter method, options
           end
         end
-      else
+      elsif Trust.rails_generation == 4
         def _filter_setting(method, *args)
-          #puts method.inspect, args.inspect
           options = args.extract_options!
           skip_before_action method # , raise: false # raise not supported in 4.2.6
+          unless args.include? :off or options[method] == :off
+            #puts "before_action #{method.inspect}, #{options.inspect}"
+            before_action method, options
+          end
+        end        
+      else
+        def _filter_setting(method, *args)
+          options = args.extract_options!
+          skip_before_action method, raise: false # raise not supported in 4.2.6
           unless args.include? :off or options[method] == :off
             #puts "before_action #{method.inspect}, #{options.inspect}"
             before_action method, options
@@ -181,7 +189,7 @@ module Trust
       # ==== Example
       # 
       #   def set_user
-      #     Trust::Authorization.user = Thread[:current_user]
+      #     Trust::Authorization.user = Thread[:trust_current_user]
       #   end
       def set_user
         Trust::Authorization.user = current_user
