@@ -181,7 +181,7 @@ class Trust::ControllerTest < ActiveSupport::TestCase
   end
   context 'derived controller' do
     should 'instantiate its properties' do
-      DerivedController.instance_variable_set('@properties',nil)
+      DerivedController.instance_variable_set('@_properties',nil)
       Trust::Controller::Properties.expects(:instantiate).with(DerivedController)
       DerivedController.properties
     end

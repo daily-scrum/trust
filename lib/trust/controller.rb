@@ -44,7 +44,7 @@ module Trust
       #   controller_path)
       #
       def properties
-        @properties ||= Trust::Controller::Properties.instantiate(self)
+        @_properties ||= Trust::Controller::Properties.instantiate(self)
       end      
       
       delegate :belongs_to, :actions, :model, :to => :properties
@@ -200,7 +200,7 @@ module Trust
       # Available as a helper in views.
       # See {Trust::Controller::Resource} for relevant methods.
       def resource
-        @resource ||= Trust::Controller::Resource.new(self, self.class.properties, action_name, params, request)
+        @_resource ||= Trust::Controller::Resource.new(self, self.class.properties, action_name, params, request)
       end
       
       # Returns true if resource has been loaded
