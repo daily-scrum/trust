@@ -33,7 +33,7 @@ module Trust
       attr_accessor :new_actions
       attr_accessor :member_actions
       attr_accessor :collection_actions
-      
+
       def initialize(controller, properties) #:nodoc:
         @controller = controller
         @model = controller.controller_path
@@ -55,7 +55,7 @@ module Trust
         #
         # Ensures controller properties are instantiated in a correct manner and that inheritance is supported
         def instantiate(controller)
-          new(controller, controller.superclass.instance_variable_get(:@properties))
+          new(controller, controller.superclass.instance_variable_get(:@_properties))
         end
       end
 
@@ -77,12 +77,12 @@ module Trust
         @model = name.to_s if name
         @model
       end
-      
+
       # Returns the class for the model
       def model_class
         model.to_s.classify.constantize
       end
-      
+
       # => true if action is a new_action
       def new_action?(action)
         new_actions.include? action.to_sym
@@ -95,7 +95,7 @@ module Trust
       def member_action?(action)
         member_actions.include? action.to_sym
       end
-      
+
       def action_type(action)
         return :collection if collection_actions.include?( action.to_sym)
         return :member if member_actions.include?( action.to_sym)
@@ -118,11 +118,11 @@ module Trust
           @associations[resource] = options[:as]
         end
       end
-      
+
       def has_associations?
         @associations.size > 0
       end
-      
+
       # Specify actions to handle
       #
       # === Options
@@ -132,7 +132,7 @@ module Trust
       #  :collection => actions # specify collection actions - default is :index
       #  :except => actions     # removes any standard actions
       #  :only => actions       # selects only the standard actions specifiec
-      #  :add => {options}      # to add options, eg  :add => {:new => :confirm} 
+      #  :add => {options}      # to add options, eg  :add => {:new => :confirm}
       #
       def actions(options)
         if add = options[:add]

@@ -27,26 +27,26 @@ module Trust
   module Controller
     autoload :Resource,           'trust/controller/resource'
     autoload :Properties,         'trust/controller/properties'
-    
+
     extend ActiveSupport::Concern
-        
+
     module ClassMethods
-      
+
       # Returns the controller Trust::Controller::Properties.
       # If no properties are instantiated, it will be instantiated
-      # 
+      #
       # == Delegated methods
       #
       # The following methods are delegated to properties. See Trust::Controller::Properties for details
       # * +belongs_to+ - define one or more associations to parents
       # * +actions+ - acion definitions outside the restful actions
-      # * +model+ - Redefine the model used in the controller (if it's name does not match the 
+      # * +model+ - Redefine the model used in the controller (if it's name does not match the
       #   controller_path)
       #
       def properties
         @_properties ||= Trust::Controller::Properties.instantiate(self)
-      end      
-      
+      end
+
       delegate :belongs_to, :actions, :model, :to => :properties
 
       # Enables authorization in controller
@@ -57,7 +57,7 @@ module Trust
       # +trustee+ accepts +:off+ for +set_user+, +load_resource+ and +access_control+ individually
       #
       # +trustee+ will raise an Trust::AccessDenied exception if the user is not permitted the action
-      # 
+      #
       # ==== Examples
       #
       #   # enable permission check for all restful actions
@@ -101,7 +101,7 @@ module Trust
           helper_method :can?, :resource, :resource?
         end
       end
-      
+
       # Enable or disable +before_filter+ callback for setting the current user
       #
       # === Arguments:
@@ -112,7 +112,7 @@ module Trust
       def set_user(*args)
         _filter_setting(:set_user, *args)
       end
-      
+
       # Enable or disable +before_filter+ callback for setting the loading resource
       #
       # === Arguments:
@@ -134,7 +134,7 @@ module Trust
       def access_control(*args)
         _filter_setting(:access_control, *args)
       end
-      
+
     private
       if Trust.rails_generation < 4
         def _filter_setting(method, *args)
@@ -152,7 +152,7 @@ module Trust
             #puts "before_action #{method.inspect}, #{options.inspect}"
             before_action method, options
           end
-        end        
+        end
       else
         def _filter_setting(method, *args)
           options = args.extract_options!
@@ -161,33 +161,33 @@ module Trust
             #puts "before_action #{method.inspect}, #{options.inspect}"
             before_action method, options
           end
-        end        
+        end
       end
     end
-    
+
     module TrustInstanceMethods
       # Returns the controller Trust::Controller::Properties.
       # If no properties are instantiated, it will be instantiated.
-      # 
+      #
       # == Delegated methods
       #
       # The following methods are delegated to properties. See Trust::Controller::Properties for details
       # * +belongs_to+ - define one or more associations to parents
       # * +actions+ - acion definitions outside the restful actions
-      # * +model+ - Redefine the model used in the controller (if it's name does not match the 
+      # * +model+ - Redefine the model used in the controller (if it's name does not match the
       #   controller_path)
       #
       def properties
         self.class.properties
       end
-      
+
       # Sets the current user. It assumes +current_user+ is defined.
       #
       # This method is triggered as a callback on +before_filter+.
       # You may override this method.
       #
       # ==== Example
-      # 
+      #
       #   def set_user
       #     Trust::Authorization.user = Thread[:trust_current_user]
       #   end
@@ -202,10 +202,10 @@ module Trust
       def resource
         @_resource ||= Trust::Controller::Resource.new(self, self.class.properties, action_name, params, request)
       end
-      
+
       # Returns true if resource has been loaded
       def resource?
-        !@resource.nil?
+        !@_resource.nil?
       end
       # Loads the resource which basically means loading the instance and eventual parent defined through +belongs_to+
       #
@@ -219,7 +219,7 @@ module Trust
           resource.load
         end
       end
-      
+
       # Performs the actual access_control.
       #
       # This method is triggered as a callback on +before_filter+
@@ -238,9 +238,9 @@ module Trust
       # Also available as a helper in views.
       #
       # ==== Examples
-      #   +can? :edit+                          # does the current user have permission to edit the current resource? 
+      #   +can? :edit+                          # does the current user have permission to edit the current resource?
       #                                         # If there is a nested resource, the parent is automatically associated
-      #   +can? :edit, @customer+               # does the current user have permission to edit the given customer? 
+      #   +can? :edit, @customer+               # does the current user have permission to edit the given customer?
       #                                         # Parent is also passed on here.
       #   +can? :edit, @account, @client+       # is current user allowed to edit the account associated with the client?
       #def can?(action_name, subject = resource.instance || resource.relation.new, parent = resource.parent)
