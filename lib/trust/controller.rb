@@ -254,7 +254,15 @@ module Trust
         when :new
           resource.relation
         end
-        Trust::Authorization.authorized?(action_name, subject, parent)
+        @trust_cache ||= {}
+        @trust_cache[[action_name, subject, parent]] ||= !!Trust::Authorization.authorized?(action_name, subject, parent)
+        # if @trust_cache.has_key? [action_name, subject, parent]
+        #   Rails.logger.debug "Authorisation from cache: #{action_name} #{subject.is_a?(Class) ? subject.to_s : subject.cache_key} #{parent && parent.cache_key}"
+        #   @trust_cache[[action_name, subject, parent]]
+        # else
+        #   Rails.logger.debug "Authorisation load: #{action_name} #{subject.is_a?(Class) ? subject.to_s : subject.cache_key} #{parent && parent.cache_key}"
+        #   @trust_cache[[action_name, subject, parent]] = !!Trust::Authorization.authorized?(action_name, subject, parent)
+        # end
       end
     end
   end
