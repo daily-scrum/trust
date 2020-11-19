@@ -25,29 +25,29 @@
 module Trust
   # = Trust Authorization
   class Authorization
-    
+
     # raised if attempting to do resource related operations and resource is not passed on to the Authorization object
     class ResourceNotLoaded < StandardError; end
-    
+
     class << self
-      
+
       # Returns true if user is authorized to perform +action+ on +object+ or +class+.
       #
       # Options:
-      # 
+      #
       # * +:parent+ - the parent class to associate the subject with, can also be specified after the object
       #   or class. If +parent+ is given, +parent+ may be tested in the implemented Permissions class.
       #   +:parent+ is also aliased to +:for+.
       #
-      # * +:by+ - Spoecify an actor instead of the user currently logged in 
-      # 
-      # This method is called by the +can?+ method in Trust::Controller, and is normally 
+      # * +:by+ - Spoecify an actor instead of the user currently logged in
+      #
+      # This method is called by the +can?+ method in Trust::Controller, and is normally
       # not necessary to call directly.
       def authorized?(action, object_or_class_or_resource, *args)
         new(action, object_or_class_or_resource, *args).authorized?
       end
-      
-      # Tests if user is authorized to perform +action+ on +object+ or +class+, with the 
+
+      # Tests if user is authorized to perform +action+ on +object+ or +class+, with the
       # optional parent and raises Trust::AccessDenied exception if not permitted.
       # If user is authorized, sets the params_handler for the resource.
       #
@@ -57,31 +57,31 @@ module Trust
       #   or class. If +parent+ is given, +parent+ may be tested in the implemented Permissions class.
       #   +:parent+ is also aliased to +:for+.
       #
-      # * +:by+ - Spoecify an actor instead of the user currently logged in 
-      # 
-      # * +:message+ - The message to be passed onto the AccessDenied exception class      
+      # * +:by+ - Spoecify an actor instead of the user currently logged in
+      #
+      # * +:message+ - The message to be passed onto the AccessDenied exception class
       #
       # This method is used by the +access_control+ method in Trust::Controller
       def authorize!(action, object_or_class_or_resource, *args)
         new(action, object_or_class_or_resource, *args).authorize!
       end
-      
+
       # Returns the current +user+ being used in the authorization process
       def user
-        Thread.current["trust_current_user"] 
+        Thread.current["trust_current_user"]
       end
-      
+
       # Sets the current +user+ to be used in the authorization process.
       # The +user+ is thread safe.
       def user=(user)
         Thread.current["trust_current_user"] = user
       end
     end
-    
+
     attr_reader :authorization, :action, :resource, :klass, :object, :parent, :actor
-    
+
     delegate :user, to: :class
-    
+
     def initialize(action, resource_object_or_class, *args)
       options = args.extract_options!
       @action = action.to_sym
@@ -125,36 +125,38 @@ module Trust
     def authorized?
       !!permissions
     end
-    
+
     def instance_loaded(instance)
       @authorization.subject = instance
     end
-    
+
     # Preloads resource require and permit attributes, so that new objects can be initialized properly
     # raises ResourceNotLoaded if Authorization object was not initialized with a resource object
     def preload
       raise ResourceNotLoaded unless resource
       resource.params_handler = authorization.preload
     end
-    
+
     def permissions
       authorization.authorized?
     end
-    
+
 
   private
     def authorizing_class #:nodoc:
       auth = nil
-      klass.ancestors.each do |k|
+      k = klass
+      while k != Object
         break if k == ::ActiveRecord::Base
         begin
           auth = "::Permissions::#{k}".constantize
           break
         rescue
         end
+        k = k.superclass
       end
       auth || ::Permissions::Default
     end
-  
+
   end
 end
