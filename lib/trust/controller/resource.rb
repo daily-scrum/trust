@@ -24,9 +24,9 @@
 
 module Trust
   module Controller
-    # = Trust::Controller::Resource 
+    # = Trust::Controller::Resource
     #
-    # Collects information about the current resource and relations. 
+    # Collects information about the current resource and relations.
     # Handles the loading of the resource and its possible parent, i.e. setting the relevant instance variables
     # It assumes the name of the resource is built on the controllers name, but this can be overridden in your
     # controller by setting the +model+
@@ -40,7 +40,7 @@ module Trust
     #    resource.instance # => @customer_account
     #
     class Resource
-      
+
       delegate :logger, :to => Rails
       attr_reader :properties, :params, :action
       attr_reader :info, :parent_info, :relation
@@ -61,7 +61,7 @@ module Trust
       def instance
         @controller.instance_variable_get(:"@#{instance_name}")
       end
-      
+
       # Sets the instance variable
       #
       # Normally set by +load+.
@@ -72,8 +72,8 @@ module Trust
       #    resource.instance = Account.find_by_number(123456)
       def instance=(instance)
         @controller.instance_variable_set(:"@#{instance_name}", instance)
-      end      
-      
+      end
+
       # Returns the parameters for the instance (Rails 3)
       #
       # ==== Example
@@ -83,11 +83,11 @@ module Trust
       def instance_params
         info.params
       end
-      
+
       def relation
         @relation ||= @info.relation(@parent_info)
       end
-      
+
       # Returns strong parameters for the instance (Rails 4)
       # This call will take advantage of the spesified in permissions.
       # If no such permissions is defined, it will fall back to instance_params
@@ -105,12 +105,12 @@ module Trust
       #
       #     # as a new action
       #     resource.strong_params(true)  # same as params.fetch(:account, {}).permit(:number, :amount)
-      # 
+      #
       def strong_params(new_action = new_action?)
         if params_handler.size > 0
           if params_handler[:require]
-            new_action ? 
-              params.fetch(params_handler[:require], {}).permit(params_handler[:permit]) : 
+            new_action ?
+              params.fetch(params_handler[:require], {}).permit(params_handler[:permit]) :
               params.require(params_handler[:require]).permit(params_handler[:permit])
           else
             params.permit(params_handler[:permit])
@@ -130,7 +130,7 @@ module Trust
       def parent
         parent_name && @controller.instance_variable_get(:"@#{parent_name}")
       end
-      
+
       # Sets the parent instance variable
       def parent=(instance)
         @controller.instance_variable_set(:"@#{parent_name}", instance) if parent_name
@@ -148,7 +148,7 @@ module Trust
         @controller.instance_variable_set(:"@#{plural_instance_name}", instances)
       end
 
-      # Returns either the instances or the instance. 
+      # Returns either the instances or the instance.
       #
       # We have found that this can be useful in some implementation patterns
       def instantiated
@@ -166,33 +166,33 @@ module Trust
       def collection(instance = nil)
         @info.collection(@parent_info, instance)
       end
-      
+
       # true if action is a collection action
       def collection_action?
         @collection_action ||= properties.collection_action?(action)
       end
-      
+
       # true if action is a collection action
       def member_action?
         @member_action ||= properties.member_action?(action)
       end
-      
+
       # Returns a nested resource if parent is set
       def nested
         parent ? [parent, instance] : [instance]
       end
-      
+
       # true if action is a new action
       def new_action?
         @new_action ||= properties.new_action?(action)
       end
-      
+
       # Loads the resource
       #
       # See Trust::Controller::Properties which controls the behavior of this method.
       #
       # It will normally find the instance variable for existing object or initialize them as new.
-      # If using nested resources and +belongs_to+ has been declared in the controller it will use the 
+      # If using nested resources and +belongs_to+ has been declared in the controller it will use the
       # parent relation if found.
       def load
         if new_action?
@@ -205,9 +205,9 @@ module Trust
           @controller.send(:build, action) if @controller.respond_to?(:build,true)
         else # other outcome would be collection actions
 #          logger.debug "Trust.load: Parent is: #{parent.inspect}, collection or unknown action."
-        end 
+        end
       end
-      
+
       # Returns the name of the instance for the resource
       #
       # ==== Example
@@ -217,11 +217,11 @@ module Trust
       #
       #     # if nested below same class, i.e. parent and child is of same class
       #     resource.instance_name  # => :account_account
-      #     
+      #
       def instance_name
         @instance_name ||= truly_nested? ? "#{info.name}_#{info.name}".to_sym : info.name
       end
-      
+
       # Assigns the handler for safe parameters
       #
       # This is normally set by the controller during authorization
@@ -229,9 +229,9 @@ module Trust
       def params_handler=(handler)
         @params_handler = handler
       end
-      
-      
-      
+
+
+
       # Returns the plural name of the instance for the resource
       #
       # ==== Example
@@ -241,7 +241,7 @@ module Trust
       def plural_instance_name
         info.plural_name
       end
-      
+
       # Returns the name of the parent resource
       #
       # ==== Example
@@ -251,7 +251,7 @@ module Trust
       def parent_name
         parent_info && parent_info.name
       end
-      
+
       # Returns the association name with the parent
       def association_name
         parent_info && info.association_name(parent_info)
@@ -260,23 +260,23 @@ module Trust
       def extract_resource_info(model, params) # nodoc
         ResourceInfo.new(model, params)
       end
-      
+
       def extract_parent_info(associations, params, request) #nodoc
         ParentInfo.new(associations, params, request)
       end
-      
+
       # => true if parent class is the same as instance
       def truly_nested?
         parent_info && info.name == parent_info.name
       end
     end
 
-    # = ResorceInfo 
+    # = ResorceInfo
     #
     # resolves information about the resource accessed in action controller
     #
     # === Examples in PeopleController (simple case)
-    # 
+    #
     #   resource.info.klass => Person
     #   resource.info.params => {:person => {...}}       # fetches the parameters for the resource
     #   resource.info.name => :person
@@ -284,14 +284,14 @@ module Trust
     #   resource.info.path => 'people'                   # this is the controller_path
     #
     # === Examples in Lottery::AssignmentsController (with name space)
-    # 
+    #
     #   resource.info.klass => Lottery::Assignment
     #   resource.info.params => {:lottery_assignment => {...}}
     #   resource.info.name => :lottery_assignment
     #   resource.info.plural_name => :lottery_assignments
     #   resource.info.path => 'lottery/assignments'      # this is the controller_path
     #
-    # === Examples in ArchiveController (with inheritance) 
+    # === Examples in ArchiveController (with inheritance)
     # Assumptions on routes:
     #
     #   resources :archives
@@ -299,7 +299,7 @@ module Trust
     #   resources :public_acrvives, :controller => :archives
     #
     # === Examples below assumes that the route secret_arcives is being accessed at the moment
-    # 
+    #
     #   resource.info.klass => Archive
     #   resource.info.params => {:secret_archive => {...}}
     #   resource.info.name => :archive
@@ -309,11 +309,11 @@ module Trust
     #
     class Resource::Info
       attr_reader :klass, :params, :name, :path, :real_class
-      
+
       def params #:nodoc:
         @data
       end
-   
+
     protected
       def self.var_name(klass)  #:nodoc:
         klass.to_s.underscore.tr('/','_').to_sym
@@ -322,9 +322,9 @@ module Trust
         self.class.var_name(klass)
       end
     end
-    
-    # = Resource::ResorceInfo 
-    # 
+
+    # = Resource::ResorceInfo
+    #
     # Resolves the resource in subject
     # (see #Resource::Info)
     class Resource::ResourceInfo < Resource::Info
@@ -349,12 +349,12 @@ module Trust
       #
       # === Explanation
       #
-      #   Assuming 
+      #   Assuming
       #     resource is instance of Lottery::Package #1 (@lottery_package)
       #     association is Lottery::Prizes
       #     if association is named lottery_prizes, then that association is returned
       #     if association is named prizes, then that association is returned
-      #   
+      #
       def relation(associated_resource)
         if associated_resource && associated_resource.object
           associated_resource.object.send(association_name(associated_resource))
@@ -362,7 +362,7 @@ module Trust
           klass
         end
       end
-      
+
       # Returns a collection that can be used for index, new and creation actions.
       #
       # If specifying an instance, returns the full path for that instance. Can be used when not using shallow routes
@@ -378,20 +378,20 @@ module Trust
       #
       def collection(associated_resource, instance = nil)
         if associated_resource && associated_resource.object
-          [associated_resource.object, instance || association_name(associated_resource)]
+          [associated_resource.object, instance || association_name(associated_resource).to_sym]
         else
           klass
         end
       end
-      
+
       def association_name(associated_resource) # :nodoc
         name = associated_resource.as || plural_name
-        associated_resource.object.class.reflect_on_association(name) ? name : klass.to_s.demodulize.underscore.pluralize        
+        associated_resource.object.class.reflect_on_association(name) ? name : klass.to_s.demodulize.underscore.pluralize
       end
     end
 
-    # = Resource::ParentInfo 
-    # 
+    # = Resource::ParentInfo
+    #
     # Resolves the parent resource in subject
     # (see #Resource::ResourceInfo)
     class Resource::ParentInfo < Resource::Info
